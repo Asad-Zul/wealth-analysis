@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AB vs ON Wealth Analysis — Interactive 25-Year View</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+* { box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+  max-width: 1500px;
+  margin: 0 auto;
+  padding: 16px;
+  background: #fafafa;
+  color: #222;
+}
+h1 { font-size: 22px; margin: 8px 0 4px 0; }
+.sub { color: #666; font-size: 13px; margin-bottom: 16px; }
+.panel {
+  background: white;
+  border-radius: 10px;
+  padding: 16px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  margin-bottom: 16px;
+}
+.slider-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+.slider-row label { font-weight: 600; min-width: 50px; }
+input[type=range] {
+  flex: 1;
+  min-width: 200px;
+  height: 6px;
+  -webkit-appearance: none;
+  background: #ddd;
+  border-radius: 3px;
+  outline: none;
+}
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 22px;
+  height: 22px;
+  background: #1976D2;
+  border-radius: 50%;
+  cursor: pointer;
+}
+input[type=range]::-moz-range-thumb {
+  width: 22px;
+  height: 22px;
+  background: #1976D2;
+  border-radius: 50%;
+  cursor: pointer;
+  border: 0;
+}
+.year-display {
+  font-size: 24px;
+  font-weight: 700;
+  color: #1976D2;
+  min-width: 70px;
+  text-align: center;
+}
+.btn-group {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.btn-group label { font-weight: 600; font-size: 13px; color: #555; margin-right: 4px; }
+button {
+  padding: 8px 14px;
+  border: 1.5px solid #d0d0d0;
+  background: white;
+  cursor: pointer;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  transition: all 0.15s;
+  color: #333;
+}
+button:hover { border-color: #1976D2; }
+button.active {
+  background: #1976D2;
+  color: white;
+  border-color: #1976D2;
+}
+.chart-wrap {
+  background: white;
+  border-radius: 10px;
+  padding: 16px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  margin-bottom: 16px;
+}
+.chart-container {
+  position: relative;
+  height: 600px;
+  width: 100%;
+}
+.summary {
+  background: white;
+  border-radius: 10px;
+  padding: 16px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+}
+.summary h3 { margin-top: 0; }
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 10px;
+  margin-top: 10px;
+}
+.summary-card {
+  border-left: 4px solid #1976D2;
+  padding: 8px 12px;
+  background: #f8f9fa;
+  border-radius: 4px;
+}
+.summary-card.ab { border-left-color: #D32F2F; }
+.summary-card .name { font-weight: 600; font-size: 13px; color: #555; }
+.summary-card .liquid { font-size: 18px; font-weight: 700; color: #2E7D32; }
+.summary-card .total { font-size: 13px; color: #666; }
+.legend-note {
+  font-size: 11px;
+  color: #888;
+  margin-top: 8px;
+  font-style: italic;
+}
+@media (max-width: 600px) {
+  .chart-container { height: 500px; }
+  h1 { font-size: 18px; }
+  button { padding: 6px 10px; font-size: 12px; }
+}
+</style>
+</head>
+<body>
+
+<div style="background: linear-gradient(135deg, #1976D2 0%, #1565C0 100%); color: white; padding: 24px; border-radius: 12px; margin-bottom: 20px;">
+  <h1 style="margin: 0 0 8px 0; font-size: 24px;">Should we move from Alberta to Ontario?</h1>
+  <div style="font-size: 14px; opacity: 0.95;">A wealth comparison over 25 years across different jobs and scenarios. Move the year slider to see how wealth grows over time.</div>
+</div>
+
+<div style="background: #FFF3E0; border-left: 4px solid #FB8C00; padding: 14px 18px; margin-bottom: 20px; border-radius: 6px;">
+  <strong>The decision in a nutshell:</strong>
+  Staying in Alberta means I keep earning through my own clinic with the NPPCP government program — more money builds up in cash because I'm running my own business.
+  Moving to Ontario means working as a hospital/clinic NP for a salary, with a guaranteed government-style pension (HOOPP/OMERS), but less cash builds up because more is taken in taxes and pension deductions.
+  <br><br>
+  <strong>The trade-off:</strong> Ontario gives us family proximity (your sister, my dad, your parents) and a guaranteed pension. Alberta gives us substantially more accessible wealth over time. These charts quantify the financial side of that trade.
+</div>
+
+<div style="background: white; border-radius: 10px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); margin-bottom: 16px;">
+  <h3 style="margin-top: 0;">What the 4 colors mean (read this first)</h3>
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px; margin-top: 10px;">
+    <div style="border-left: 6px solid #2E7D32; padding: 8px 12px; background: #F1F8E9;">
+      <strong>Dark Green — Cash savings</strong><br>
+      <span style="font-size: 13px;">Money in our bank account. Fully accessible anytime.</span>
+    </div>
+    <div style="border-left: 6px solid #66BB6A; padding: 8px 12px; background: #F1F8E9;">
+      <strong>Light Green — Corp investments</strong><br>
+      <span style="font-size: 13px;">Money saved inside my professional corporation. Accessible but with some tax cost to withdraw to personal account.</span>
+    </div>
+    <div style="border-left: 6px solid #FF9800; padding: 8px 12px; background: #FFF3E0;">
+      <strong>Orange — Home equity</strong><br>
+      <span style="font-size: 13px;">The value built up in our house. Need to sell or take a home equity loan to access.</span>
+    </div>
+    <div style="border-left: 6px solid #9E9E9E; padding: 8px 12px; background: #F5F5F5;">
+      <strong>Gray — Pension (locked until ~65)</strong><br>
+      <span style="font-size: 13px;">Future retirement income from HOOPP/OMERS in Ontario jobs. Cannot be touched until retirement age. Shown as present-day value.</span>
+    </div>
+  </div>
+  <div style="margin-top: 12px; padding: 10px; background: #E8F5E9; border-radius: 4px; font-size: 14px;">
+    <strong>👉 The two greens combined = "Truly Liquid" wealth.</strong> This is money we can actually use for emergencies, kids' education, businesses, or just life. The orange and gray are real wealth too, but locked up in different ways.
+  </div>
+</div>
+
+<div style="background: white; border-radius: 10px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); margin-bottom: 16px;">
+  <h3 style="margin-top: 0;">What each scenario means</h3>
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 8px; font-size: 13px;">
+    <div><strong style="color: #D32F2F;">AB Optimistic:</strong> Stay in Calgary, grow panel to 1,500 patients (top tier) by Year 3, wife works</div>
+    <div><strong style="color: #D32F2F;">AB Realistic:</strong> Stay in Calgary, slower panel growth to 1,500 by Year 7, wife works</div>
+    <div><strong style="color: #D32F2F;">AB Capped 1100:</strong> Stay in Calgary, panel stuck at 1,100 patients (middle tier), wife works</div>
+    <div><strong style="color: #D32F2F;">AB Wife No Work:</strong> Stay in Calgary at top panel size, wife doesn't work in Calgary</div>
+    <div><strong style="color: #1565C0;">ON Osler:</strong> Move to Brampton, hospital NP at William Osler ($147K starting, top union grid)</div>
+    <div><strong style="color: #1565C0;">ON CoT LTC:</strong> Move to Toronto, City of Toronto long-term care NP ($135K starting, 35h/week)</div>
+    <div><strong style="color: #1565C0;">ON LAMP:</strong> Move to Toronto, community health center NP at LAMP ($122K starting)</div>
+    <div><strong style="color: #1565C0;">ON CarePoint:</strong> Move to Mississauga, private clinic NP ($121K starting, non-union)</div>
+    <div><strong style="color: #1565C0;">ON CommunitiCare:</strong> Move to Toronto, CHC NP ($117K starting, no HOOPP — CUPE pension instead)</div>
+  </div>
+  <div style="margin-top: 12px; padding: 10px; background: #FFF8E1; border-radius: 4px; font-size: 13px;">
+    <strong>"$45K side" / "$30K side" / "NO SIDE":</strong> How much extra income I earn per year on top of my main job through virtual care (Hims & Hers, Maple), aesthetic medicine, locums, or the Inhouse business. The amount of side income significantly changes the financial picture.
+  </div>
+</div>
+
+<div style="background: white; border-radius: 10px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); margin-bottom: 16px;">
+  <h3 style="margin-top: 0;">📖 How to use this chart</h3>
+  <ol style="font-size: 14px; margin: 6px 0;">
+    <li><strong>Start at Year 10</strong> (slider default). This is our main planning horizon.</li>
+    <li><strong>Click "Top picks"</strong> filter to see just my 4 most realistic options side-by-side.</li>
+    <li><strong>Try "Truly Liquid Only" view</strong> — this shows the money we can actually USE for life, not locked in a house or pension.</li>
+    <li><strong>Slide year to 25</strong> to see how the gap widens (or closes) over the long term.</li>
+    <li><strong>Switch to "Trajectory" view</strong> to see how each option grows year-by-year as a line.</li>
+  </ol>
+</div>
+
+<div class="panel">
+  <div class="slider-row">
+    <label>Year:</label>
+    <input type="range" id="yearSlider" min="1" max="25" value="10">
+    <div class="year-display">Y<span id="yearLabel">10</span></div>
+  </div>
+
+  <div class="btn-group" style="margin-bottom: 10px;">
+    <label>What to show:</label>
+    <button class="active" data-view="stacked">All 4 buckets (full picture)</button>
+    <button data-view="liquid">Just usable money</button>
+    <button data-view="total">Just total wealth</button>
+    <button data-view="trajectory">Year-by-year growth lines</button>
+  </div>
+
+  <div class="btn-group">
+    <label>Which scenarios:</label>
+    <button class="active" data-filter="all">All 19</button>
+    <button data-filter="ab">Alberta options (4)</button>
+    <button data-filter="on45">Ontario w/ $45K side</button>
+    <button data-filter="on30">Ontario w/ $30K side</button>
+    <button data-filter="onnoside">Ontario, no side income</button>
+    <button data-filter="osler-cot-comparison">⭐ My top 4 picks</button>
+  </div>
+</div>
+
+<div class="chart-wrap">
+  <div class="chart-container">
+    <canvas id="chart"></canvas>
+  </div>
+  <div class="legend-note">
+    Truly Liquid = Cash + Corp investments (accessible). Home equity = need to sell/HELOC. Pension = locked until retirement (commuted value PV).
+    Mortgage paid off year ~26. Years 11-25 assume 2% salary growth post-grid-progression.
+  </div>
+</div>
+
+<div class="summary" id="summaryPanel">
+  <h3>Snapshot at Y<span id="snapshotYear">10</span></h3>
+  <div class="summary-grid" id="summaryGrid"></div>
+</div>
+
+<script>
+const SCENARIOS = {"AB Optimistic": {"cash": [22137, 73038, 138408, 216612, 303591, 400136, 507108, 625445, 756170, 900397, 1059342, 1234330, 1426804, 1638338, 1870648, 2125590, 2405076, 2711316, 3046718, 3413906, 3815741, 4255341, 4736105, 5261737, 5836277], "corp": [13737, 38046, 84502, 158021, 238156, 325504, 420713, 524491, 637608, 760907, 895302, 1041793, 1201468, 1375513, 1565223, 1772007, 1997401, 2243081, 2510872, 2802764, 3120926, 3467723, 3845732, 4257761, 4706873], "home_equity": [0, 55832, 67531, 80096, 93528, 107826, 122991, 139022, 155920, 173685, 192316, 211814, 232178, 253409, 275506, 298470, 322301, 346998, 372561, 398992, 426289, 454452, 483482, 513378, 544141], "pension": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "province": "AB", "side_income_tier": "AB"}, "AB Realistic": {"cash": [22137, 60784, 125052, 202053, 287723, 382840, 488255, 604895, 733770, 875981, 1032729, 1205322, 1395185, 1603874, 1833082, 2084642, 2360443, 2662667, 2993690, 3356105, 3752738, 4186668, 4661251, 5180147, 5747343], "corp": [13737, 28710, 49027, 71172, 120609, 174496, 256114, 345078, 442049, 547747, 662957, 788537, 925419, 1074620, 1237250, 1414516, 1607736, 1818346, 2047911, 2298136, 2570882, 2868175, 3192224, 3545438, 3930441], "home_equity": [0, 55832, 67531, 80096, 93528, 107826, 122991, 139022, 155920, 173685, 192316, 211814, 232178, 253409, 275506, 298470, 322301, 346998, 372561, 398992, 426289, 454452, 483482, 513378, 544141], "pension": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "province": "AB", "side_income_tier": "AB"}, "AB Capped 1100": {"cash": [22137, 60784, 125052, 202053, 287723, 382840, 488255, 604895, 733770, 875981, 1032729, 1205322, 1395185, 1603874, 1833082, 2084642, 2360443, 2662667, 2993690, 3356105, 3752738, 4186668, 4661251, 5180147, 5747343], "corp": [13737, 28710, 49027, 71172, 95310, 121621, 150300, 181560, 215633, 252772, 293255, 337380, 385477, 437903, 495047, 557334, 625227, 699231, 779894, 867817, 963654, 1068115, 1181979, 1306090, 1441370], "home_equity": [0, 55832, 67531, 80096, 93528, 107826, 122991, 139022, 155920, 173685, 192316, 211814, 232178, 253409, 275506, 298470, 322301, 346998, 372561, 398992, 426289, 454452, 483482, 513378, 544141], "pension": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "province": "AB", "side_income_tier": "AB"}, "AB Wife No Work": {"cash": [22137, 28292, 35000, 42313, 50283, 58971, 68441, 78763, 90014, 102277, 115645, 130215, 146097, 163408, 182277, 202844, 225263, 249699, 276334, 305366, 337011, 371505, 409102, 450084, 494754], "corp": [13737, 38046, 84502, 158021, 238156, 325504, 420713, 524491, 637608, 760907, 895302, 1041793, 1201468, 1375513, 1565223, 1772007, 1997401, 2243081, 2510872, 2802764, 3120926, 3467723, 3845732, 4257761, 4706873], "home_equity": [0, 55832, 67531, 80096, 93528, 107826, 122991, 139022, 155920, 173685, 192316, 211814, 232178, 253409, 275506, 298470, 322301, 346998, 372561, 398992, 426289, 454452, 483482, 513378, 544141], "pension": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "province": "AB", "side_income_tier": "AB"}, "ON Osler $45K side": {"cash": [51429, 71481, 96377, 124840, 160003, 201372, 249447, 304830, 368224, 440337, 522050, 614306, 718046, 834368, 964392, 1109387, 1270764, 1450066, 1648916, 1869134, 2112714, 2381869, 2679001, 3006704, 3367806], "corp": [28035, 58593, 91902, 128208, 167781, 210917, 257934, 309183, 365045, 425934, 492303, 564645, 643498, 729448, 823133, 925250, 1036558, 1157883, 1290127, 1434274, 1591394, 1762654, 1949328, 2152802, 2374590], "home_equity": [0, 84553, 100270, 117152, 135197, 154407, 174782, 196320, 219023, 242890, 267921, 294116, 321476, 350000, 379688, 410540, 442557, 475738, 510083, 545592, 582265, 620103, 659105, 699272, 740602], "pension": [18218, 38746, 61927, 86675, 116389, 148597, 184435, 224230, 268334, 317130, 371030, 430477, 495953, 567974, 647101, 733937, 829130, 933381, 1047447, 1172140, 1308336, 1456979, 1619086, 1795749, 1988146], "province": "ON", "side_income_tier": "$45K"}, "ON CoT LTC $45K side": {"cash": [44961, 59173, 78115, 101564, 129987, 163930, 203904, 250508, 304362, 366032, 436233, 515737, 605371, 706152, 819207, 945701, 1086912, 1244141, 1418877, 1612765, 1827595, 2065260, 2327882, 2617781, 2937532], "corp": [28035, 58593, 91902, 128208, 167781, 210917, 257934, 309183, 365045, 425934, 492303, 564645, 643498, 729448, 823133, 925250, 1036558, 1157883, 1290127, 1434274, 1591394, 1762654, 1949328, 2152802, 2374590], "home_equity": [0, 84553, 100270, 117152, 135197, 154407, 174782, 196320, 219023, 242890, 267921, 294116, 321476, 350000, 379688, 410540, 442557, 475738, 510083, 545592, 582265, 620103, 659105, 699272, 740602], "pension": [17137, 36915, 59324, 84177, 111970, 142971, 177472, 215788, 258260, 305256, 357174, 414443, 477526, 546924, 623176, 706865, 798617, 899110, 1009072, 1129289, 1260607, 1403937, 1560261, 1730635, 1916195], "province": "ON", "side_income_tier": "$45K"}, "ON LAMP $45K side": {"cash": [38047, 43432, 51915, 63825, 79526, 99412, 123851, 153279, 188187, 229053, 276469, 331053, 393459, 464448, 544851, 635530, 737371, 851440, 978899, 1121015, 1279273, 1455197, 1650447, 1866794, 2106138], "corp": [28035, 58593, 91902, 128208, 167781, 210917, 257934, 309183, 365045, 425934, 492303, 564645, 643498, 729448, 823133, 925250, 1036558, 1157883, 1290127, 1434274, 1591394, 1762654, 1949328, 2152802, 2374590], "home_equity": [0, 84553, 100270, 117152, 135197, 154407, 174782, 196320, 219023, 242890, 267921, 294116, 321476, 350000, 379688, 410540, 442557, 475738, 510083, 545592, 582265, 620103, 659105, 699272, 740602], "pension": [16023, 34119, 54484, 77333, 102894, 131418, 163174, 198454, 237574, 280874, 328723, 381518, 439689, 503699, 574048, 651275, 735962, 828735, 930271, 1041297, 1162598, 1295019, 1439469, 1596927, 1768448], "province": "ON", "side_income_tier": "$45K"}, "ON CarePoint $45K side": {"cash": [37469, 42265, 50094, 61282, 76183, 95187, 118669, 147044, 180792, 220381, 266393, 319416, 380106, 449211, 527549, 615984, 715404, 826821, 951375, 1090311, 1245045, 1417112, 1608142, 1819910, 2054255], "corp": [28035, 58593, 91902, 128208, 167781, 210917, 257934, 309183, 365045, 425934, 492303, 564645, 643498, 729448, 823133, 925250, 1036558, 1157883, 1290127, 1434274, 1591394, 1762654, 1949328, 2152802, 2374590], "home_equity": [0, 84553, 100270, 117152, 135197, 154407, 174782, 196320, 219023, 242890, 267921, 294116, 321476, 350000, 379688, 410540, 442557, 475738, 510083, 545592, 582265, 620103, 659105, 699272, 740602], "pension": [15937, 33937, 54195, 76924, 102351, 130727, 162319, 197418, 236337, 279417, 327022, 379550, 437427, 501115, 571111, 647952, 732216, 824528, 925561, 1036038, 1156740, 1288508, 1432249, 1588935, 1759617], "province": "ON", "side_income_tier": "$45K"}, "ON CommunitiCare $45K side": {"cash": [40046, 47584, 58452, 73004, 91624, 114735, 142749, 176162, 215487, 261215, 313978, 374414, 443201, 521147, 609138, 708138, 819198, 943469, 1082111, 1236474, 1408039, 1598420, 1809378, 2042833, 2300881], "corp": [28035, 58593, 91902, 128208, 167781, 210917, 257934, 309183, 365045, 425934, 492303, 564645, 643498, 729448, 823133, 925250, 1036558, 1157883, 1290127, 1434274, 1591394, 1762654, 1949328, 2152802, 2374590], "home_equity": [0, 84553, 100270, 117152, 135197, 154407, 174782, 196320, 219023, 242890, 267921, 294116, 321476, 350000, 379688, 410540, 442557, 475738, 510083, 545592, 582265, 620103, 659105, 699272, 740602], "pension": [7069, 15060, 24060, 34166, 45479, 58112, 72186, 87829, 105185, 124405, 145654, 169110, 194965, 223428, 254720, 289085, 326783, 368094, 413321, 462791, 516856, 575892, 640310, 710547, 787076], "province": "ON", "side_income_tier": "$45K"}, "ON Osler $30K side": {"cash": [48943, 66286, 88227, 113471, 145125, 182669, 226614, 277595, 336189, 403072, 479083, 565124, 662090, 771028, 893004, 1029226, 1181041, 1349919, 1537464, 1745376, 1975541, 2230074, 2511269, 2821600, 3163767], "corp": [18690, 39062, 61268, 85472, 111854, 140611, 171956, 206122, 243363, 283956, 328202, 376430, 428999, 486299, 548756, 616834, 691039, 771922, 860085, 956183, 1060929, 1175103, 1299552, 1435202, 1583060], "home_equity": [0, 84553, 100270, 117152, 135197, 154407, 174782, 196320, 219023, 242890, 267921, 294116, 321476, 350000, 379688, 410540, 442557, 475738, 510083, 545592, 582265, 620103, 659105, 699272, 740602], "pension": [18218, 38746, 61927, 86675, 116389, 148597, 184435, 224230, 268334, 317130, 371030, 430477, 495953, 567974, 647101, 733937, 829130, 933381, 1047447, 1172140, 1308336, 1456979, 1619086, 1795749, 1988146], "province": "ON", "side_income_tier": "$30K"}, "ON CoT LTC $30K side": {"cash": [42403, 53888, 69869, 90090, 114994, 145102, 180895, 222942, 271830, 328137, 392580, 465807, 548599, 641924, 746849, 864484, 996037, 1142739, 1306002, 1487383, 1688581, 1911450, 2157954, 2430283, 2730883], "corp": [18690, 39062, 61268, 85472, 111854, 140611, 171956, 206122, 243363, 283956, 328202, 376430, 428999, 486299, 548756, 616834, 691039, 771922, 860085, 956183, 1060929, 1175103, 1299552, 1435202, 1583060], "home_equity": [0, 84553, 100270, 117152, 135197, 154407, 174782, 196320, 219023, 242890, 267921, 294116, 321476, 350000, 379688, 410540, 442557, 475738, 510083, 545592, 582265, 620103, 659105, 699272, 740602], "pension": [17137, 36915, 59324, 84177, 111970, 142971, 177472, 215788, 258260, 305256, 357174, 414443, 477526, 546924, 623176, 706865, 798617, 899110, 1009072, 1129289, 1260607, 1403937, 1560261, 1730635, 1916195], "province": "ON", "side_income_tier": "$30K"}, "ON LAMP $30K side": {"cash": [35489, 38086, 43530, 52128, 64218, 80169, 100336, 125152, 155042, 190439, 231893, 279980, 335303, 398572, 470561, 552071, 644017, 747337, 863078, 992423, 1136759, 1297510, 1476220, 1674538, 1894231], "corp": [18690, 39062, 61268, 85472, 111854, 140611, 171956, 206122, 243363, 283956, 328202, 376430, 428999, 486299, 548756, 616834, 691039, 771922, 860085, 956183, 1060929, 1175103, 1299552, 1435202, 1583060], "home_equity": [0, 84553, 100270, 117152, 135197, 154407, 174782, 196320, 219023, 242890, 267921, 294116, 321476, 350000, 379688, 410540, 442557, 475738, 510083, 545592, 582265, 620103, 659105, 699272, 740602], "pension": [16023, 34119, 54484, 77333, 102894, 131418, 163174, 198454, 237574, 280874, 328723, 381518, 439689, 503699, 574048, 651275, 735962, 828735, 930271, 1041297, 1162598, 1295019, 1439469, 1596927, 1768448], "province": "ON", "side_income_tier": "$30K"}, "ON CarePoint $30K side": {"cash": [34911, 36919, 41709, 49584, 60875, 75943, 95137, 118880, 147606, 181723, 221770, 268290, 321893, 383273, 453190, 532447, 621925, 722580, 835405, 961556, 1102353, 1259231, 1433703, 1627424, 1842098], "corp": [18690, 39062, 61268, 85472, 111854, 140611, 171956, 206122, 243363, 283956, 328202, 376430, 428999, 486299, 548756, 616834, 691039, 771922, 860085, 956183, 1060929, 1175103, 1299552, 1435202, 1583060], "home_equity": [0, 84553, 100270, 117152, 135197, 154407, 174782, 196320, 219023, 242890, 267921, 294116, 321476, 350000, 379688, 410540, 442557, 475738, 510083, 545592, 582265, 620103, 659105, 699272, 740602], "pension": [15937, 33937, 54195, 76924, 102351, 130727, 162319, 197418, 236337, 279417, 327022, 379550, 437427, 501115, 571111, 647952, 732216, 824528, 925561, 1036038, 1156740, 1288508, 1432249, 1588935, 1759617], "province": "ON", "side_income_tier": "$30K"}, "ON CommunitiCare $30K side": {"cash": [37488, 42238, 50067, 61306, 76316, 95491, 119215, 147953, 182195, 222425, 269212, 323132, 384817, 455024, 534577, 624380, 725416, 838760, 965584, 1107112, 1264687, 1439818, 1634154, 1849491, 2087790], "corp": [18690, 39062, 61268, 85472, 111854, 140611, 171956, 206122, 243363, 283956, 328202, 376430, 428999, 486299, 548756, 616834, 691039, 771922, 860085, 956183, 1060929, 1175103, 1299552, 1435202, 1583060], "home_equity": [0, 84553, 100270, 117152, 135197, 154407, 174782, 196320, 219023, 242890, 267921, 294116, 321476, 350000, 379688, 410540, 442557, 475738, 510083, 545592, 582265, 620103, 659105, 699272, 740602], "pension": [7069, 15060, 24060, 34166, 45479, 58112, 72186, 87829, 105185, 124405, 145654, 169110, 194965, 223428, 254720, 289085, 326783, 368094, 413321, 462791, 516856, 575892, 640310, 710547, 787076], "province": "ON", "side_income_tier": "$30K"}, "ON Osler NO SIDE": {"cash": [43933, 55853, 71884, 90685, 115316, 145205, 180807, 222694, 271477, 327769, 392308, 465843, 549178, 643259, 749040, 867609, 1000183, 1148088, 1312773, 1495816, 1698942, 1924029, 2173127, 2448473, 2752506], "corp": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "home_equity": [0, 84553, 100270, 117152, 135197, 154407, 174782, 196320, 219023, 242890, 267921, 294116, 321476, 350000, 379688, 410540, 442557, 475738, 510083, 545592, 582265, 620103, 659105, 699272, 740602], "pension": [18218, 38746, 61927, 86675, 116389, 148597, 184435, 224230, 268334, 317130, 371030, 430477, 495953, 567974, 647101, 733937, 829130, 933381, 1047447, 1172140, 1308336, 1456979, 1619086, 1795749, 1988146], "province": "ON", "side_income_tier": "NO SIDE"}, "ON CoT LTC NO SIDE": {"cash": [37287, 43196, 53154, 66856, 84696, 107105, 134507, 167407, 206324, 251764, 304374, 364805, 433753, 512046, 600587, 700362, 812449, 937932, 1078067, 1234237, 1407957, 1600874, 1814787, 2051660, 2313632], "corp": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "home_equity": [0, 84553, 100270, 117152, 135197, 154407, 174782, 196320, 219023, 242890, 267921, 294116, 321476, 350000, 379688, 410540, 442557, 475738, 510083, 545592, 582265, 620103, 659105, 699272, 740602], "pension": [17137, 36915, 59324, 84177, 111970, 142971, 177472, 215788, 258260, 305256, 357174, 414443, 477526, 546924, 623176, 706865, 798617, 899110, 1009072, 1129289, 1260607, 1403937, 1560261, 1730635, 1916195], "province": "ON", "side_income_tier": "NO SIDE"}, "ON LAMP NO SIDE": {"cash": [30374, 27394, 26760, 28733, 33601, 41681, 53268, 68733, 88463, 112830, 142308, 177359, 218475, 266257, 321365, 384475, 456366, 537890, 629976, 733641, 849992, 980238, 1125697, 1287773, 1467961], "corp": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "home_equity": [0, 84553, 100270, 117152, 135197, 154407, 174782, 196320, 219023, 242890, 267921, 294116, 321476, 350000, 379688, 410540, 442557, 475738, 510083, 545592, 582265, 620103, 659105, 699272, 740602], "pension": [16023, 34119, 54484, 77333, 102894, 131418, 163174, 198454, 237574, 280874, 328723, 381518, 439689, 503699, 574048, 651275, 735962, 828735, 930271, 1041297, 1162598, 1295019, 1439469, 1596927, 1768448], "province": "ON", "side_income_tier": "NO SIDE"}, "ON CarePoint NO SIDE": {"cash": [29795, 26227, 24939, 26189, 30258, 37455, 48069, 62460, 81009, 104075, 132123, 165603, 204992, 250879, 303909, 364758, 434171, 512980, 602093, 702501, 815288, 941634, 1082827, 1240274, 1415408], "corp": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "home_equity": [0, 84553, 100270, 117152, 135197, 154407, 174782, 196320, 219023, 242890, 267921, 294116, 321476, 350000, 379688, 410540, 442557, 475738, 510083, 545592, 582265, 620103, 659105, 699272, 740602], "pension": [15937, 33937, 54195, 76924, 102351, 130727, 162319, 197418, 236337, 279417, 327022, 379550, 437427, 501115, 571111, 647952, 732216, 824528, 925561, 1036038, 1156740, 1288508, 1432249, 1588935, 1759617], "province": "ON", "side_income_tier": "NO SIDE"}, "ON CommunitiCare NO SIDE": {"cash": [32372, 31546, 33297, 37911, 45699, 57003, 72148, 91533, 115582, 144701, 179406, 220201, 267625, 322312, 384949, 456314, 537252, 628689, 731634, 847188, 976553, 1121040, 1281990, 1460936, 1659570], "corp": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "home_equity": [0, 84553, 100270, 117152, 135197, 154407, 174782, 196320, 219023, 242890, 267921, 294116, 321476, 350000, 379688, 410540, 442557, 475738, 510083, 545592, 582265, 620103, 659105, 699272, 740602], "pension": [7069, 15060, 24060, 34166, 45479, 58112, 72186, 87829, 105185, 124405, 145654, 169110, 194965, 223428, 254720, 289085, 326783, 368094, 413321, 462791, 516856, 575892, 640310, 710547, 787076], "province": "ON", "side_income_tier": "NO SIDE"}};
+
+const SCENARIO_ORDER = [
+  'AB Optimistic', 'AB Realistic', 'AB Capped 1100', 'AB Wife No Work',
+  'ON Osler $45K side', 'ON Osler $30K side', 'ON Osler NO SIDE',
+  'ON CoT LTC $45K side', 'ON CoT LTC $30K side', 'ON CoT LTC NO SIDE',
+  'ON LAMP $45K side', 'ON LAMP $30K side', 'ON LAMP NO SIDE',
+  'ON CarePoint $45K side', 'ON CarePoint $30K side', 'ON CarePoint NO SIDE',
+  'ON CommunitiCare $45K side', 'ON CommunitiCare $30K side', 'ON CommunitiCare NO SIDE',
+];
+
+const COLORS = {
+  cash: '#2E7D32',
+  corp: '#66BB6A',
+  home: '#FF9800',
+  pension: '#9E9E9E',
+  ab: '#D32F2F',
+  on45: '#1565C0',
+  on30: '#5C6BC0',
+  onnoside: '#B39DDB',
+};
+
+const TRAJECTORY_COLORS = {
+  'AB Optimistic': '#D32F2F',
+  'AB Realistic': '#F44336',
+  'AB Capped 1100': '#FF7043',
+  'AB Wife No Work': '#8B0000',
+  'ON Osler $45K side': '#0D47A1',
+  'ON CoT LTC $45K side': '#1976D2',
+  'ON LAMP $45K side': '#42A5F5',
+  'ON CarePoint $45K side': '#64B5F6',
+  'ON CommunitiCare $45K side': '#90CAF9',
+  'ON Osler $30K side': '#4527A0',
+  'ON CoT LTC $30K side': '#5E35B1',
+  'ON LAMP $30K side': '#7E57C2',
+  'ON CarePoint $30K side': '#9575CD',
+  'ON CommunitiCare $30K side': '#B39DDB',
+  'ON Osler NO SIDE': '#880E4F',
+  'ON CoT LTC NO SIDE': '#AD1457',
+  'ON LAMP NO SIDE': '#C2185B',
+  'ON CarePoint NO SIDE': '#D81B60',
+  'ON CommunitiCare NO SIDE': '#EC407A',
+};
+
+let currentYear = 10;
+let currentView = 'stacked';
+let currentFilter = 'all';
+
+function fmt(val) {
+  if (Math.abs(val) >= 1e6) return `$${(val/1e6).toFixed(2)}M`;
+  if (Math.abs(val) >= 1000) return `$${(val/1e3).toFixed(0)}K`;
+  return `$${val.toFixed(0)}`;
+}
+
+function getFilteredScenarios() {
+  let names = SCENARIO_ORDER.filter(n => SCENARIOS[n]);
+  if (currentFilter === 'ab') names = names.filter(n => n.startsWith('AB'));
+  else if (currentFilter === 'on45') names = names.filter(n => n.includes('$45K'));
+  else if (currentFilter === 'on30') names = names.filter(n => n.includes('$30K'));
+  else if (currentFilter === 'onnoside') names = names.filter(n => n.includes('NO SIDE'));
+  else if (currentFilter === 'osler-cot-comparison') names = ['AB Realistic', 'AB Capped 1100', 'ON Osler $45K side', 'ON CoT LTC $45K side'];
+  return names;
+}
+
+function getBarColor(name) {
+  if (name.startsWith('AB')) return COLORS.ab;
+  if (name.includes('$45K')) return COLORS.on45;
+  if (name.includes('$30K')) return COLORS.on30;
+  if (name.includes('NO SIDE')) return COLORS.onnoside;
+  return '#999';
+}
+
+let chart = null;
+
+function buildStackedChart() {
+  const names = getFilteredScenarios();
+  const yIdx = currentYear - 1;
+
+  const cashVals = names.map(n => SCENARIOS[n].cash[yIdx]);
+  const corpVals = names.map(n => SCENARIOS[n].corp[yIdx]);
+  const homeVals = names.map(n => SCENARIOS[n].home_equity[yIdx]);
+  const pensionVals = names.map(n => SCENARIOS[n].pension[yIdx]);
+
+  return {
+    type: 'bar',
+    data: {
+      labels: names,
+      datasets: [
+        { label: 'Cash savings (TRULY LIQUID)', data: cashVals, backgroundColor: COLORS.cash, borderColor: '#1B5E20', borderWidth: 1 },
+        { label: 'Corp investments (TRULY LIQUID)', data: corpVals, backgroundColor: COLORS.corp, borderColor: '#2E7D32', borderWidth: 1 },
+        { label: 'Home equity (ILLIQUID)', data: homeVals, backgroundColor: COLORS.home, borderColor: '#E65100', borderWidth: 1 },
+        { label: 'Pension PV (LOCKED)', data: pensionVals, backgroundColor: COLORS.pension, borderColor: '#616161', borderWidth: 1 },
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        x: { stacked: true, ticks: { font: { size: 10 }, maxRotation: 45, minRotation: 30 } },
+        y: { stacked: true, ticks: { callback: v => fmt(v) } }
+      },
+      plugins: {
+        legend: { position: 'top' },
+        tooltip: {
+          callbacks: {
+            label: ctx => `${ctx.dataset.label}: ${fmt(ctx.parsed.y)}`,
+            footer: items => {
+              const total = items.reduce((s, i) => s + i.parsed.y, 0);
+              const liquid = items[0].parsed.y + items[1].parsed.y;
+              return `Truly Liquid: ${fmt(liquid)} | Total: ${fmt(total)}`;
+            }
+          }
+        }
+      }
+    }
+  };
+}
+
+function buildLiquidChart() {
+  const names = getFilteredScenarios();
+  const yIdx = currentYear - 1;
+  const vals = names.map(n => SCENARIOS[n].cash[yIdx] + SCENARIOS[n].corp[yIdx]);
+  const colors = names.map(getBarColor);
+
+  return {
+    type: 'bar',
+    data: {
+      labels: names,
+      datasets: [{ label: 'Truly Liquid (Cash + Corp)', data: vals, backgroundColor: colors, borderColor: '#000', borderWidth: 0.5 }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        x: { ticks: { font: { size: 10 }, maxRotation: 45, minRotation: 30 } },
+        y: { ticks: { callback: v => fmt(v) } }
+      },
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: ctx => `Liquid: ${fmt(ctx.parsed.y)}` } }
+      }
+    }
+  };
+}
+
+function buildTotalChart() {
+  const names = getFilteredScenarios();
+  const yIdx = currentYear - 1;
+  const vals = names.map(n => SCENARIOS[n].cash[yIdx] + SCENARIOS[n].corp[yIdx] + SCENARIOS[n].home_equity[yIdx] + SCENARIOS[n].pension[yIdx]);
+  const colors = names.map(getBarColor);
+
+  return {
+    type: 'bar',
+    data: {
+      labels: names,
+      datasets: [{ label: 'Total Wealth', data: vals, backgroundColor: colors, borderColor: '#000', borderWidth: 0.5 }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        x: { ticks: { font: { size: 10 }, maxRotation: 45, minRotation: 30 } },
+        y: { ticks: { callback: v => fmt(v) } }
+      },
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: ctx => `Total: ${fmt(ctx.parsed.y)}` } }
+      }
+    }
+  };
+}
+
+function buildTrajectoryChart() {
+  const names = getFilteredScenarios();
+  const years = Array.from({length: 25}, (_, i) => 'Y' + (i+1));
+
+  const datasets = names.map(n => ({
+    label: n,
+    data: SCENARIOS[n].cash.map((c, i) => c + SCENARIOS[n].corp[i]),
+    borderColor: TRAJECTORY_COLORS[n] || '#999',
+    backgroundColor: TRAJECTORY_COLORS[n] || '#999',
+    borderWidth: n.startsWith('AB') ? 3 : 2,
+    borderDash: n.startsWith('AB') ? [] : (n.includes('NO SIDE') ? [2,3] : (n.includes('$30K') ? [5,5] : [])),
+    pointRadius: 3,
+    pointHoverRadius: 6,
+    fill: false,
+    tension: 0.1,
+  }));
+
+  return {
+    type: 'line',
+    data: { labels: years, datasets },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        x: { title: { display: true, text: 'Year' } },
+        y: { ticks: { callback: v => fmt(v) }, title: { display: true, text: 'Truly Liquid Wealth (Cash + Corp)' } }
+      },
+      plugins: {
+        legend: { position: 'right', labels: { font: { size: 10 }, boxWidth: 12 } },
+        tooltip: { callbacks: { label: ctx => `${ctx.dataset.label}: ${fmt(ctx.parsed.y)}` } }
+      }
+    }
+  };
+}
+
+function renderChart() {
+  if (chart) chart.destroy();
+  let cfg;
+  if (currentView === 'stacked') cfg = buildStackedChart();
+  else if (currentView === 'liquid') cfg = buildLiquidChart();
+  else if (currentView === 'total') cfg = buildTotalChart();
+  else if (currentView === 'trajectory') cfg = buildTrajectoryChart();
+  const ctx = document.getElementById('chart').getContext('2d');
+  chart = new Chart(ctx, cfg);
+}
+
+function renderSummary() {
+  const names = getFilteredScenarios();
+  const yIdx = currentYear - 1;
+  const grid = document.getElementById('summaryGrid');
+  document.getElementById('snapshotYear').textContent = currentYear;
+
+  // Sort by truly liquid descending
+  const sorted = names.map(n => ({
+    name: n,
+    cash: SCENARIOS[n].cash[yIdx],
+    corp: SCENARIOS[n].corp[yIdx],
+    home: SCENARIOS[n].home_equity[yIdx],
+    pension: SCENARIOS[n].pension[yIdx],
+  })).sort((a,b) => (b.cash+b.corp) - (a.cash+a.corp));
+
+  grid.innerHTML = sorted.map(s => {
+    const liquid = s.cash + s.corp;
+    const total = liquid + s.home + s.pension;
+    const isAB = s.name.startsWith('AB');
+    return `<div class="summary-card ${isAB ? 'ab' : ''}">
+      <div class="name">${s.name}</div>
+      <div class="liquid">${fmt(liquid)} <span style="font-size:11px;font-weight:400;color:#666">liquid</span></div>
+      <div class="total">Total ${fmt(total)} | Home ${fmt(s.home)} | Pension ${fmt(s.pension)}</div>
+    </div>`;
+  }).join('');
+}
+
+function updateAll() {
+  document.getElementById('yearLabel').textContent = currentYear;
+  renderChart();
+  renderSummary();
+}
+
+document.getElementById('yearSlider').addEventListener('input', (e) => {
+  currentYear = parseInt(e.target.value);
+  updateAll();
+});
+
+document.querySelectorAll('[data-view]').forEach(btn => {
+  btn.addEventListener('click', (e) => {
+    document.querySelectorAll('[data-view]').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentView = btn.dataset.view;
+    updateAll();
+  });
+});
+
+document.querySelectorAll('[data-filter]').forEach(btn => {
+  btn.addEventListener('click', (e) => {
+    document.querySelectorAll('[data-filter]').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentFilter = btn.dataset.filter;
+    updateAll();
+  });
+});
+
+updateAll();
+</script>
+
+</body>
+</html>
